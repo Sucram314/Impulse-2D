@@ -1,0 +1,34 @@
+from .body import *
+from .linear_algebra import Vector
+from .collision import Collision
+from math import atan2
+
+class Plane(Body):
+    def __init__(self,
+                 pos : Vector,
+                 norm : Vector,
+                 e : float = 0.8,
+                 mu_s : float = 0.5,
+                 mu_d : float = 0.4):
+        
+        self.norm = norm
+        self.norm.normalize()
+        
+        ang = atan2(self.norm.y, self.norm.x)
+
+        super().__init__(PLANE, pos, ang, 0, 0, Vector(0,0), 0, e, mu_s, mu_d)
+
+    def collide(self, other : Body):
+        if other.kind == PLANE:
+            pass
+        elif other.kind == CIRCLE:
+            dpos = other.pos - self.pos
+
+            dist = dpos * self.norm
+
+            if dist < other.rad:
+                depth = other.rad - dist
+                contact1 = other.pos - self.norm * dist
+                contact2 = other.pos - self.norm * other.rad
+
+                return Collision(self, other, self.norm, depth, [contact1, contact2])
