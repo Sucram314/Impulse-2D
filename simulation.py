@@ -2,16 +2,24 @@
 import pygame
 import pygame.gfxdraw
 import sys
-from math import sin,cos
+from math import sin,cos,pi
 from src.linear_algebra import Vector
 from src.body import *
-from src.scene import Scene
-from src.circle import Circle
 from src.plane import Plane
+from src.circle import Circle
+from src.polygon import Polygon
+from src.scene import Scene
 from src.camera import Camera
 
 pygame.font.init()
 font = pygame.font.SysFont("Verdana",30)
+
+bodies : list[Body] = [
+    Plane(Vector(0,0),Vector(0,1)),
+    Circle(Vector(0,2),2), 
+    Circle(Vector(4,2),1,vel=Vector(-2,1)),
+    Polygon(Vector(0,10),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=2)
+]
 
 class Display:
     def __init__(self,width=1280,height=650,bg=(0,0,0),fps=120):
@@ -26,7 +34,7 @@ class Display:
         self.corners = [Vector(0,0), Vector(width,0), Vector(width,height), Vector(0,height)]
         self.clock = pygame.time.Clock()
 
-        self.scene = Scene(bodies=[Plane(Vector(0,0),Vector(0,1)),Circle(Vector(0,2),2), Circle(Vector(4,2),1,vel=Vector(-2,1))])
+        self.scene = Scene(bodies=bodies)
         self.camera = Camera(width=self.width, height=self.height)
 
         self.debug = False
@@ -77,32 +85,26 @@ class Display:
             dp1 = (p1 - pos) * norm
             dp2 = (p2 - pos) * norm
 
-            if dp1 > 0 and dp2 > 0:
-                points.append(p1)
-                points.append(p2)
-            elif dp1 <= 0 and dp2 <= 0:
-                pass
-            else:
+            if (dp1 > 0) ^ (dp2 > 0):
                 dpos = p2 - p1
                 dpos.normalize()
 
                 t = (pos - p1) * norm / (dpos * norm)
 
-                if dp1 > 0:
-                    p2 = p1 + dpos * t
-                else:
-                    p1 = p1 + dpos * t
+                points.append(p1 + dpos * t)
 
-                points.append(p1)
-                points.append(p2)
-
-        if points:
-            pygame.draw.polygon(self.screen, colour, [(p.x, p.y) for p in points])
+        if len(points) == 2:
+            pygame.draw.aaline(self.screen, colour, (points[0].x, points[0].y), (points[1].x, points[1].y))
 
     def draw_circle(self, colour, pos : Vector, rad, ang):
         center = (pos.x, pos.y)
-        pygame.draw.aacircle(self.screen, colour, center, rad)
-        pygame.draw.aaline(self.screen, (0,0,0), center, (pos.x + rad * cos(ang), pos.y - rad * sin(ang)))
+        pygame.draw.aacircle(self.screen, colour, center, rad, width=1)
+        pygame.draw.aaline(self.screen, colour, center, (pos.x + rad * cos(ang + pi/30), pos.y - rad * sin(ang + pi/30)))
+        pygame.draw.aaline(self.screen, colour, center, (pos.x + rad * cos(ang - pi/30), pos.y - rad * sin(ang - pi/30)))
+
+    def draw_polygon(self, colour, points : list[Vector]):
+        tuples = [(p.x, p.y) for p in points]
+        pygame.gfxdraw.aapolygon(self.screen, tuples, colour)
 
     def draw(self):
         self.screen.fill(self.bg)
@@ -110,12 +112,18 @@ class Display:
         for body in self.scene.bodies:
             if body.kind == PLANE:
                 rel_pos = self.camera.to_screen_space(body.pos)
+
                 self.draw_plane((255,255,255), rel_pos, body.norm)
+
             elif body.kind == CIRCLE:
                 rel_pos = self.camera.to_screen_space(body.pos)
                 rel_rad = body.rad * self.camera.zoom
 
                 self.draw_circle((255,255,255), rel_pos, rel_rad, body.ang)
+
+            elif body.kind == POLYGON:
+                rel_points = [self.camera.to_screen_space(point) for point in body.transformed_points]
+                self.draw_polygon((255,255,255), rel_points)
         
         pygame.display.flip()
         

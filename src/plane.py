@@ -18,9 +18,12 @@ class Plane(Body):
 
         super().__init__(PLANE, pos, ang, 0, 0, Vector(0,0), 0, e, mu_s, mu_d)
 
+    def bound(self):
+        pass
+
     def collide(self, other : Body):
         if other.kind == PLANE:
-            pass
+            other.collide(self)
         elif other.kind == CIRCLE:
             dpos = other.pos - self.pos
 
@@ -32,3 +35,23 @@ class Plane(Body):
                 contact2 = other.pos - self.norm * other.rad
 
                 return Collision(self, other, self.norm, depth, [contact1, contact2])
+            
+        elif other.kind == POLYGON:
+            min_dist = 0
+            contacts = []
+
+            for point in other.transformed_points:
+                dpos = point - self.pos
+
+                dist = dpos * self.norm
+
+                if dist < min_dist:
+                    min_dist = dist
+                
+                if dist < 0:
+                    contacts.append(point)
+
+            if min_dist < 0:
+                depth = -min_dist
+
+                return Collision(self, other, self.norm, depth, contacts)

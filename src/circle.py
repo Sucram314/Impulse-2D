@@ -21,7 +21,13 @@ class Circle(Body):
 
         super().__init__(CIRCLE, pos, ang, inv_mass, inv_inertia, vel, ang_vel, e, mu_s, mu_d)
 
+    def bound(self):
+        self.AABB.update(self.pos.x - self.rad, self.pos.y - self.rad, self.pos.x + self.rad, self.pos.y + self.rad)
+
     def collide(self, other : Body):
+        if not self.AABB.collide(other.AABB):
+            return
+        
         if other.kind == PLANE:
             other.collide(self)
         elif other.kind == CIRCLE:
@@ -36,3 +42,5 @@ class Circle(Body):
                 contact = self.pos + norm * self.rad
 
                 return Collision(self, other, norm, depth, [contact])
+        elif other.kind == POLYGON:
+            pass

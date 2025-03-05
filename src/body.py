@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from .linear_algebra import Vector
+from .AABB import AABB
 
 PLANE = 0
 CIRCLE = 1
+POLYGON = 2
 
 class Body(ABC):
     def __init__(self, 
@@ -30,6 +32,9 @@ class Body(ABC):
         self.mu_s = mu_s
         self.mu_d = mu_d
 
+        self.AABB : AABB = AABB()
+        self.bound()
+
     def vel_at(self, pos : Vector):
         return self.vel + self.ang_vel * pos.perpendicular()
     
@@ -47,6 +52,12 @@ class Body(ABC):
         self.vel += gravity * delta_time
         self.pos += self.vel * delta_time
         self.ang += self.ang_vel * delta_time
+
+        self.bound()
+
+    @abstractmethod
+    def bound(self):
+        pass
 
     @abstractmethod
     def collide(self, other):

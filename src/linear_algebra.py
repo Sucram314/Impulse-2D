@@ -15,6 +15,9 @@ class Vector:
         return Vector(self.x - other.x, self.y - other.y)
     
     def __mul__(self, other):
+        if isinstance(other, Matrix):
+            return other * self
+        
         if isinstance(other, Vector):
             return self.x * other.x + self.y * other.y
         
