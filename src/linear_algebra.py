@@ -32,6 +32,9 @@ class Vector:
     def __xor__(self, other):
         return self.x * other.y - self.y * other.x
     
+    def __repr__(self):
+        return f"Vector({self.x},{self.y})"
+    
     def perpendicular(self):
         return Vector(-self.y, self.x)
     

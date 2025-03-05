@@ -16,9 +16,10 @@ font = pygame.font.SysFont("Verdana",30)
 
 bodies : list[Body] = [
     Plane(Vector(0,0),Vector(0,1)),
-    Circle(Vector(0,2),2), 
-    Circle(Vector(4,2),1,vel=Vector(-2,1)),
-    Polygon(Vector(0,10),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=2)
+    #Circle(Vector(0,2),2), 
+    #Circle(Vector(4,2),1,vel=Vector(-2,1)),
+    Polygon(Vector(0,10),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=2),
+    Polygon(Vector(-1,13),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=-1),
 ]
 
 class Display:
@@ -38,6 +39,7 @@ class Display:
         self.camera = Camera(width=self.width, height=self.height)
 
         self.debug = False
+        self.debug_points : list[Vector] = []
 
     def update(self):
         delta_time = self.clock.tick_busy_loop(self.fps) / 1000
@@ -54,6 +56,8 @@ class Display:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+                elif event.key == pygame.K_BACKQUOTE:
+                    self.debug = not self.debug
                 elif event.key == pygame.K_SPACE:
                     self.scene.paused = not self.scene.paused
                 elif event.key == pygame.K_RETURN:
@@ -70,10 +74,13 @@ class Display:
         self.camera.update(mouse_pos,world_pos,key,shift,scroll,delta_time)
 
         self.scene.interact(left_click, world_pos)
-        self.scene.update(delta_time)
+        self.debug_points = self.scene.update(1/self.fps, self.debug) or self.debug_points # fixed delta time
 
         if step:
             self.scene.paused = True
+
+    def draw_point(self, colour, pos : Vector):
+        pygame.draw.aacircle(self.screen, colour, (pos.x, pos.y), 0.1 * self.camera.zoom)
 
     def draw_plane(self, colour, pos : Vector, norm : Vector):
         points : list[Vector] = []
@@ -124,6 +131,11 @@ class Display:
             elif body.kind == POLYGON:
                 rel_points = [self.camera.to_screen_space(point) for point in body.transformed_points]
                 self.draw_polygon((255,255,255), rel_points)
+
+        if self.debug:
+            for point in self.debug_points:
+                rel_pos = self.camera.to_screen_space(point)
+                self.draw_point((255,0,0),rel_pos)
         
         pygame.display.flip()
         
