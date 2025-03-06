@@ -14,12 +14,10 @@ class Scene:
 
         self.paused = False
 
-    def update(self, delta_time, debug=False):
+    def update(self, delta_time):
         if self.paused: 
             return
         
-        debug_points = []
-
         num_bodies = len(self.bodies)
 
         for body in self.bodies:
@@ -38,13 +36,15 @@ class Scene:
                     self.collisions.append(collision)
     
         for collision in self.collisions:
-            if debug: debug_points.extend(collision.contacts)
             collision.resolve()
 
-        return debug_points
+        return self.collisions
 
     def interact(self, left_click : bool, pos : Vector):
         if left_click:
-            rad = random.uniform(0.5,5)
-            n = random.randint(3,10)
-            self.bodies.append(Polygon(pos, [Vector(rad*cos(i*2*pi/n), -rad*sin(i*2*pi/n)) for i in range(n)]))
+            if random.randint(0,1):
+                rad = random.uniform(0.5,5)
+                n = random.randint(3,10)
+                self.bodies.append(Polygon(pos, [Vector(rad*cos(i*2*pi/n), -rad*sin(i*2*pi/n)) for i in range(n)]))
+            else:
+                self.bodies.append(Circle(pos, random.uniform(0.5,5)))

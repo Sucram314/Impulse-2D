@@ -29,7 +29,7 @@ class Circle(Body):
             return
         
         if other.kind == PLANE:
-            other.collide(self)
+            return other.collide(self)
         elif other.kind == CIRCLE:
             dpos = other.pos - self.pos
 
@@ -43,4 +43,4 @@ class Circle(Body):
 
                 return Collision(self, other, norm, depth, [contact])
         elif other.kind == POLYGON:
-            pass
+            return other.collide(self)

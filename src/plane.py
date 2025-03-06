@@ -23,7 +23,7 @@ class Plane(Body):
 
     def collide(self, other : Body):
         if other.kind == PLANE:
-            other.collide(self)
+            pass
         elif other.kind == CIRCLE:
             dpos = other.pos - self.pos
 

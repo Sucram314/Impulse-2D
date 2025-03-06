@@ -36,7 +36,7 @@ class Polygon(Body):
                  e : float = 0.8,
                  mu_s : float = 0.5,
                  mu_d : float = 0.4):
-        
+                
         self.num_points = len(points)
         
         area = 0
@@ -86,7 +86,7 @@ class Polygon(Body):
 
         p1 = self.transformed_points[0]
         p2 = self.transformed_points[1]
-        self.edges.append(p2 - p1)
+        self.edges.append((p2 - p1).normalized())
 
         for i in range(1, self.num_points):
             p1 = self.transformed_points[i]
@@ -97,7 +97,7 @@ class Polygon(Body):
             max_x = max(max_x, p1.x)
             max_y = max(max_y, p1.y)
 
-            self.edges.append(p2 - p1)
+            self.edges.append((p2 - p1).normalized())
 
         self.AABB.update(min_x, min_y, max_x, max_y)
 
@@ -127,11 +127,55 @@ class Polygon(Body):
             return
         
         if other.kind == PLANE:
-            other.collide(self)
+            return other.collide(self)
         elif other.kind == CIRCLE:
-            pass
+            min_dist = INF
+            norm : Vector = Vector(0,0)
+
+            for i in range(self.num_points):
+                p1 = self.transformed_points[i]
+                p2 = self.transformed_points[(i+1)%self.num_points]
+
+                edge = self.edges[i]
+
+                dpos = other.pos - p1
+
+                axis = edge.perpendicular()
+
+                dist = dpos * axis
+                closest = other.pos - axis * dist
+
+                if (closest - p1) * edge < 0:
+                    closest = p1
+                elif (closest - p2) * edge > 0:
+                    closest = p2
+
+                dpos = other.pos - closest
+
+                if dpos.squared_length() <= other.rad ** 2:
+                    axis = dpos.normalized()
+
+                    if axis * (other.pos - self.pos) < 0:
+                        axis = -axis
+
+                    dist = dpos * axis
+                    
+                    if dist < min_dist:
+                        min_dist = dist
+                        norm = axis
+
+            if min_dist == INF:
+                return
+            
+            depth = other.rad - min_dist
+                                    
+            contact1 = other.pos - norm * (other.rad - depth)
+            contact2 = other.pos - norm * other.rad
+
+            return Collision(self, other, norm, depth, [contact1, contact2])
+
         elif other.kind == POLYGON:
-            depth = float("inf")
+            depth = INF
             norm : Vector = Vector(0,0)
             support_idx_A = 0
             support_idx_B = 0
@@ -158,8 +202,6 @@ class Polygon(Body):
                     norm = axis
                     support_idx_A = idx_A
                     support_idx_B = idx_B
-
-            norm.normalize()
 
             dpos = other.pos - self.pos
             if norm * dpos < 0:
@@ -201,6 +243,8 @@ class Polygon(Body):
             p1_B = other.transformed_points[support_idx_B]
             p2_B = other.transformed_points[(support_idx_B+1)%other.num_points]
 
+            # clip edges
+
             if dp_A < dp_B:
                 ref_edge = edge_A.normalized()
                 ref_p1 = p1_A
@@ -238,9 +282,3 @@ class Polygon(Body):
                     norm = -norm
             
                 return Collision(self, other, norm, depth, contacts)
-            
-
-
-            
-
-

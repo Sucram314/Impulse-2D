@@ -5,6 +5,7 @@ import sys
 from math import sin,cos,pi
 from src.linear_algebra import Vector
 from src.body import *
+from src.collision import Collision
 from src.plane import Plane
 from src.circle import Circle
 from src.polygon import Polygon
@@ -16,10 +17,10 @@ font = pygame.font.SysFont("Verdana",30)
 
 bodies : list[Body] = [
     Plane(Vector(0,0),Vector(0,1)),
-    #Circle(Vector(0,2),2), 
+    Circle(Vector(0,2),1), 
     #Circle(Vector(4,2),1,vel=Vector(-2,1)),
-    Polygon(Vector(0,10),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=2),
-    Polygon(Vector(-1,13),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=-1),
+    Polygon(Vector(0,2),[Vector(2,-2),Vector(-2,-2),Vector(-2,2),Vector(2,2)], ang_vel=0),
+    #Polygon(Vector(-1,13),[Vector(-1,-1),Vector(-1,1),Vector(1,1),Vector(1,-1)], ang_vel=0),
 ]
 
 class Display:
@@ -39,7 +40,7 @@ class Display:
         self.camera = Camera(width=self.width, height=self.height)
 
         self.debug = False
-        self.debug_points : list[Vector] = []
+        self.debug_collisions : list[Collision] = []
 
     def update(self):
         delta_time = self.clock.tick_busy_loop(self.fps) / 1000
@@ -74,13 +75,16 @@ class Display:
         self.camera.update(mouse_pos,world_pos,key,shift,scroll,delta_time)
 
         self.scene.interact(left_click, world_pos)
-        self.debug_points = self.scene.update(1/self.fps, self.debug) or self.debug_points # fixed delta time
+        self.debug_collisions = self.scene.update(1/self.fps) or self.debug_collisions # fixed delta time
 
         if step:
             self.scene.paused = True
 
     def draw_point(self, colour, pos : Vector):
         pygame.draw.aacircle(self.screen, colour, (pos.x, pos.y), 0.1 * self.camera.zoom)
+
+    def draw_line(self, colour, p1 : Vector, p2 : Vector):
+        pygame.draw.aaline(self.screen, colour, (p1.x,p1.y), (p2.x,p2.y))
 
     def draw_plane(self, colour, pos : Vector, norm : Vector):
         points : list[Vector] = []
@@ -133,9 +137,14 @@ class Display:
                 self.draw_polygon((255,255,255), rel_points)
 
         if self.debug:
-            for point in self.debug_points:
-                rel_pos = self.camera.to_screen_space(point)
-                self.draw_point((255,0,0),rel_pos)
+            for collision in self.debug_collisions:
+                for p in collision.contacts:
+                    rel_pos = self.camera.to_screen_space(p)
+                    p1 = self.camera.to_screen_space(p + collision.norm * .5)
+                    p2 = self.camera.to_screen_space(p - collision.norm * .5)
+
+                    self.draw_point((255,0,0),rel_pos)
+                    self.draw_line((255,0,0), p1, p2)
         
         pygame.display.flip()
         
