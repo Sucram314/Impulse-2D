@@ -86,6 +86,19 @@ class Display:
     def draw_line(self, colour, p1 : Vector, p2 : Vector):
         pygame.draw.aaline(self.screen, colour, (p1.x,p1.y), (p2.x,p2.y))
 
+    def draw_AABB(self, colour, p1 : Vector, p2 : Vector):
+        x1 = p1.x
+        x2 = p2.x
+        if x1 > x2:
+            x1, x2 = x2, x1
+
+        y1 = p1.y
+        y2 = p2.y
+        if y1 > y2:
+            y1, y2 = y2, y1
+
+        pygame.draw.rect(self.screen, colour, (x1, y1, x2-x1, y2-y1), width=1)
+
     def draw_plane(self, colour, pos : Vector, norm : Vector):
         points : list[Vector] = []
 
@@ -135,6 +148,11 @@ class Display:
             elif body.kind == POLYGON:
                 rel_points = [self.camera.to_screen_space(point) for point in body.transformed_points]
                 self.draw_polygon((255,255,255), rel_points)
+
+            if self.debug:
+                p1 = self.camera.to_screen_space(Vector(body.AABB.x1,body.AABB.y1))
+                p2 = self.camera.to_screen_space(Vector(body.AABB.x2,body.AABB.y2))
+                self.draw_AABB((0,255,0),p1,p2)
 
         if self.debug:
             for collision in self.debug_collisions:

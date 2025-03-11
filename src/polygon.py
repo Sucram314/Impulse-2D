@@ -1,6 +1,8 @@
 from .body import *
 from .linear_algebra import Vector, RotationMatrix
 from .collision import Collision
+import random
+import math
 
 INF = float("inf")
 
@@ -24,6 +26,59 @@ def clip(p1 : Vector, p2 : Vector, pos : Vector, norm : Vector):
         return clipped, p2
     
     return p1, clipped
+
+def random_convex(n : int, r : float):
+    x = sorted([random.uniform(-r,r) for i in range(n)])
+    y = sorted([random.uniform(-r,r) for i in range(n)])
+
+    minx = x[0]
+    maxx = x[-1]
+    miny = y[0]
+    maxy = y[-1]
+
+    xvec = []
+    yvec = []
+
+    last1 = minx
+    last2 = minx
+    for i in range(1,n-1):
+        cur = x[i]
+        if random.randint(0,1):
+            xvec.append(cur-last1)
+            last1 = cur
+        else:
+            xvec.append(last2-cur)
+            last2 = cur
+
+    xvec.append(maxx - last1)
+    xvec.append(last2 - maxx)
+
+    last1 = miny
+    last2 = miny
+    for i in range(1,n-1):
+        cur = y[i]
+        if random.randint(0,1):
+            yvec.append(cur-last1)
+            last1 = cur
+        else:
+            yvec.append(last2-cur)
+            last2 = cur
+
+    yvec.append(maxy - last1)
+    yvec.append(last2 - maxy)
+
+    random.shuffle(yvec)
+
+    vec = [Vector(xvec[i], yvec[i]) for i in range(n)]
+    vec.sort(key=lambda v:math.atan2(v.y,v.x))
+
+    cur = Vector(0,0)
+    res = []
+    for i in range(n):
+        cur += vec[i]
+        res.append(cur)
+
+    return res
 
 class Polygon(Body):
     def __init__(self, 

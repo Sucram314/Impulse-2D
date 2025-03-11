@@ -1,7 +1,7 @@
 from .linear_algebra import Vector
 from .body import *
 from .circle import Circle
-from .polygon import Polygon
+from .polygon import Polygon, random_convex
 from .collision import Collision
 from math import sin,cos,pi
 import random
@@ -45,6 +45,6 @@ class Scene:
             if random.randint(0,1):
                 rad = random.uniform(0.5,5)
                 n = random.randint(3,10)
-                self.bodies.append(Polygon(pos, [Vector(rad*cos(i*2*pi/n), -rad*sin(i*2*pi/n)) for i in range(n)]))
+                self.bodies.append(Polygon(pos, random_convex(n, rad)))
             else:
                 self.bodies.append(Circle(pos, random.uniform(0.5,5)))
